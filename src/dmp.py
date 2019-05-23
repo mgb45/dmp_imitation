@@ -30,14 +30,14 @@ class CanonicalSystem():
 
 class DMP():
 
-    def __init__(self,goal,y0, Nb=5, dt=0.05, d=2):
+    def __init__(self,goal,y0, Nb=5, dt=0.05, d=2,jnames=[]):
 
         self.ay = np.ones(d)*25
         self.by = self.ay/4.
         self.dt = dt
         self.Nb = Nb
         self.d = d
-
+        self.joint_names = jnames
         self.cs = CanonicalSystem(dt=self.dt)
         self.T = self.cs.timesteps
 

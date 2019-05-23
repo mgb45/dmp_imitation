@@ -12,7 +12,6 @@ class PlayBack():
         rospy.init_node('dmp_playback',anonymous=True)
         self.traj_pub = rospy.Publisher('motion_segment',JointTrajectory,queue_size=1)
         rospy.Subscriber('joint_states',JointState,self.callback)
-        self.joint_names = None
         self.header = None
 
     def load_dmp(self,i):
@@ -22,7 +21,6 @@ class PlayBack():
 
     def callback(self,msg):
         self.header = msg.header
-        self.joint_names = msg.name
 
     def spin(self):
         rate = rospy.Rate(0.1)
@@ -34,7 +32,7 @@ class PlayBack():
                 y_r,dy_r,ddy_r = dmp.rollout()
                 jt = JointTrajectory()
                 jt.header = self.header
-                jt.joint_names = self.joint_names
+                jt.joint_names = dmp.joint_names
                 jtp = JointTrajectoryPoint()
 
                 for i in range(y_r.shape[0]):

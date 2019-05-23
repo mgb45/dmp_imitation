@@ -10,10 +10,14 @@ import pickle
 
 class Imitate():
 
-    def __init__(self):
+    def __init__(self,arm_prefix):
         rospy.init_node('dmp_fitter',anonymous=True)
         rospy.Subscriber('joint_states',JointState,self.callback)
 
+        self.joint_names = [arm_prefix + joint for joint in
+        ["_shoulder_pan_joint","_shoulder_lift_joint", "_upper_arm_roll_joint",
+        "_elbow_flex_joint", "_forearm_roll_joint", "_wrist_flex_joint",
+        "_wrist_roll_joint"]]
 
         self.js_0 = None
         self.js_1 = None
@@ -34,15 +38,19 @@ class Imitate():
         if np.sum(np.abs(np.array(self.js_0.position) -
         np.array(self.js_1.position))) > 0.01:
             print('Moving')
-            self.traj.append(msg.position)
+            j_list = []
+            for j,joint in enumerate(msg.name):
+                j_list.append(msg.position[j])
+            self.traj.append(j_list)
         else:
             if len(self.traj) > 0:
 
                 # Fit DMP to motion segment 
                 path = np.array(self.traj)
-                dmp = DMP(path[0,:],path[-1,:], Nb=500, dt=0.01, d=path.shape[1])
+                dmp = DMP(path[0,:],path[-1,:], Nb=500, dt=0.01,
+                d=path.shape[1],jnames=self.joint_names)
                 params = dmp.imitate_path(path+1e-5*np.random.randn(path.shape[0],path.shape[1]))
-                print(params)
+                #print(params)
 
                 dmp.reset_state()
                 self.dmp_count += 1
@@ -60,7 +68,7 @@ class Imitate():
                 plt.draw()
                 plt.pause(0.1)
                 self.jt.header = msg.header
-                self.jt.joint_names = msg.name
+                self.jt.joint_names = self.joint_names
                 jtp = JointTrajectoryPoint()
                 for i in range(y_r.shape[0]):
                     jtp.positions = y_r[i,:].tolist()
@@ -80,5 +88,5 @@ class Imitate():
 
 if __name__ == '__main__':
     plt.ion()
-    im = Imitate()
+    im = Imitate('r')
     im.spin()
