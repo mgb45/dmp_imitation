@@ -39,8 +39,10 @@ class Imitate():
         np.array(self.js_1.position))) > 0.01:
             print('Moving')
             j_list = []
-            for j,joint in enumerate(msg.name):
-                j_list.append(msg.position[j])
+            for j,joint in enumerate(self.joint_names):
+		i = msg.name.index(joint)
+		if i:
+	        	j_list.append(msg.position[i])
             self.traj.append(j_list)
         else:
             if len(self.traj) > 0:
@@ -88,5 +90,5 @@ class Imitate():
 
 if __name__ == '__main__':
     plt.ion()
-    im = Imitate('r')
+    im = Imitate('l')
     im.spin()
