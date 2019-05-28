@@ -13,7 +13,7 @@ import copy
 
 class PlayBack():
 
-    def __init__(self):
+    def __init__(self,group):
         rospy.init_node('dmp_playback',anonymous=True)
         self.traj_pub = rospy.Publisher('motion_segment',JointTrajectory,queue_size=1)
         rospy.Subscriber('joint_states',JointState,self.callback)
@@ -61,9 +61,9 @@ class PlayBack():
 
 
 
-                plan,fraction = group.compute_cartesian_path(wapoints,0.01,0.0)
+                plan,fraction = self.group.compute_cartesian_path(waypoints,0.01,0.0)
 
-                #group.execute(plan,wait=True)
+                self.group.execute(plan,wait=True)
                 #jtp.positions = y_r[i,:].tolist()
                 #jtp.velocities = dy_r[i,:].tolist()
                 #jtp.time_from_start = rospy.Duration(1)
@@ -80,6 +80,6 @@ class PlayBack():
 
 
 if __name__ == '__main__':
-    pb = PlayBack()
+    pb = PlayBack('left_arm')
     pb.spin()
 

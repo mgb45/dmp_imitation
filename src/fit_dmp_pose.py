@@ -19,41 +19,42 @@ class Imitate():
     def __init__(self,group):
         rospy.init_node('dmp_fitter',anonymous=True)
 
+	self.name = group
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
         self.group = moveit_commander.MoveGroupCommander(group)
 
-        self.pos_0 = None
-        self.pos_1 = None
+        self.pose_0 = None
+        self.pose_1 = None
 
         self.moving = False
         self.traj = []
         self.dmp_count = 0
 
     def callback(self,msg):
-        if self.js_0 == None:
-            self.js_0 = [msg.position.x, msg.position.y, msg.position.z,
+        if self.pose_0 == None:
+            self.pose_0 = [msg.position.x, msg.position.y, msg.position.z,
             msg.orientation.x, msg.orientation.y, msg.orientation.z,
             msg.orientation.w]
-            self.js_1 = [msg.position.x, msg.position.y, msg.position.z,
+            self.pose_1 = [msg.position.x, msg.position.y, msg.position.z,
             msg.orientation.x, msg.orientation.y, msg.orientation.z,
             msg.orientation.w]
         else:
-            self.js_0 = self.js_1
-            self.js_1 = [msg.position.x, msg.position.y, msg.position.z,
+            self.pose_0 = self.pose_1
+            self.pose_1 = [msg.position.x, msg.position.y, msg.position.z,
             msg.orientation.x, msg.orientation.y, msg.orientation.z,
             msg.orientation.w]
 
-        if np.sum(np.abs(np.array(self.js_0) - np.array(self.js_1))) > 0.01:
+        if np.sum(np.abs(np.array(self.pose_0) - np.array(self.pose_1))) > 0.01:
             print('Moving')
-            self.traj.append(j_list)
+            self.traj.append(self.pose_1)
         else:
-            if len(self.traj) > 0:
+            if len(self.traj) > 5:
 
                 # Fit DMP to motion segment 
                 path = np.array(self.traj)
-                dmp = DMP(path[0,:],path[-1,:], Nb=500, dt=0.01,
-                d=path.shape[1],jnames=self.joint_names)
+                dmp = DMP(path[0,:],path[-1,:], Nb=500, dt=0.05,
+                d=path.shape[1],jnames=self.name)
                 params = dmp.imitate_path(path+1e-5*np.random.randn(path.shape[0],path.shape[1]))
                 #print(params)
 
@@ -72,30 +73,20 @@ class Imitate():
                 plt.plot(path)
                 plt.draw()
                 plt.pause(0.1)
-                self.jt.header = msg.header
-                self.jt.joint_names = self.joint_names
-                jtp = JointTrajectoryPoint()
-                for i in range(y_r.shape[0]):
-                    jtp.positions = y_r[i,:].tolist()
-                    jtp.velocities = dy_r[i,:].tolist()
-                    jtp.time_from_start = rospy.Duration(1.0)
-                    self.jt.points.append(jtp)
-                self.traj_pub.publish(self.jt)
-
-                self.traj = []
+                
+            self.traj = []
 
             print('Stationary')
-            self.jt = JointTrajectory()
 
     def spin(self):
         r = rospy.Rate(10)
         while not rospy.is_shutdown():
             pose = self.group.get_current_pose().pose
-            self.callback(r,pose)
+            self.callback(pose)
             r.sleep()
 
 
 if __name__ == '__main__':
     plt.ion()
-    im = Imitate('l')
+    im = Imitate('left_arm')
     im.spin()
