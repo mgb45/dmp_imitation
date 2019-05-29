@@ -53,7 +53,7 @@ class Imitate():
 
                 # Fit DMP to motion segment 
                 path = np.array(self.traj)
-                dmp = DMP(path[0,:],path[-1,:], Nb=500, dt=0.05,
+                dmp = DMP(path[0,:],path[-1,:], Nb=500, dt=0.01,
                 d=path.shape[1],jnames=self.name)
                 params = dmp.imitate_path(path+1e-5*np.random.randn(path.shape[0],path.shape[1]))
                 #print(params)
